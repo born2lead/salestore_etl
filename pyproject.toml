@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "de-proj-aws"
+version = "0.1.0"
+description = "Production-grade AWS Data Engineering ETL Pipeline Architecture"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pyspark>=3.4.0,<4.0.0",
+    "boto3>=1.28.0",
+    "botocore>=1.31.0",
+    "pandas>=2.0.0",
+    "pyarrow>=12.0.0",
+    "pytest>=7.4.0",
+    "great-expectations>=0.17.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0"
+]

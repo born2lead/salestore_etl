@@ -1,0 +1,114 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: airflow-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-airflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
+      POSTGRES_DB: ${POSTGRES_DB:-airflow}
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  airflow-init:
+    image: apache/airflow:2.8.2-python3.10
+    container_name: airflow-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      &airflow-common-env
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+      AIRFLOW__CORE__DEFAULT_TIMEZONE: 'utc'
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-airflow}
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__FERNET_KEY: ''
+      _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-apache-airflow-providers-amazon boto3}
+      PYTHONPATH: /opt/airflow:/opt/airflow/src
+      # AWS Region & Credentials
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-ap-south-1}
+      AWS_REGION: ${AWS_REGION:-ap-south-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      # Pipeline Lakehouse Resources
+      RAW_S3_BUCKET: ${RAW_S3_BUCKET:-de-proj-aws-raw-zone-dev}
+      SILVER_S3_BUCKET: ${SILVER_S3_BUCKET:-de-proj-aws-silver-zone-dev}
+      GOLD_S3_BUCKET: ${GOLD_S3_BUCKET:-de-proj-aws-gold-zone-dev}
+      ATHENA_RESULTS_BUCKET: ${ATHENA_RESULTS_BUCKET:-de-proj-aws-athena-results-dev}
+      GLUE_DATABASE_NAME: ${GLUE_DATABASE_NAME:-de_proj_aws_db_dev}
+      SNS_TOPIC_ARN: ${SNS_TOPIC_ARN:-arn:aws:sns:ap-south-1:939139585522:de-proj-aws-pipeline-alerts-dev}
+      GLUE_BRONZE_SILVER_JOB_NAME: ${GLUE_BRONZE_SILVER_JOB_NAME:-de-proj-aws-bronze-to-silver}
+      GLUE_SILVER_GOLD_JOB_NAME: ${GLUE_SILVER_GOLD_JOB_NAME:-de-proj-aws-silver-to-gold}
+      GLUE_SILVER_CRAWLER_NAME: ${GLUE_SILVER_CRAWLER_NAME:-de-proj-aws-silver-crawler}
+      GLUE_GOLD_CRAWLER_NAME: ${GLUE_GOLD_CRAWLER_NAME:-de-proj-aws-gold-crawler}
+    volumes:
+      &airflow-common-volumes
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ~/.aws:/home/airflow/.aws:ro
+    user: "${AIRFLOW_UID:-50000}:0"
+    command:
+      - bash
+      - -c
+      - |
+        airflow db migrate &&
+        airflow users create \
+          --username admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com \
+          --password admin || true
+        airflow connections add aws_default --conn-type aws --conn-extra '{"region_name": "ap-south-1"}' || true
+
+  airflow-webserver:
+    image: apache/airflow:2.8.2-python3.10
+    container_name: airflow-webserver
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      *airflow-common-env
+    volumes:
+      *airflow-common-volumes
+    user: "${AIRFLOW_UID:-50000}:0"
+    ports:
+      - "8080:8080"
+    command: webserver
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.2-python3.10
+    container_name: airflow-scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      *airflow-common-env
+    volumes:
+      *airflow-common-volumes
+    user: "${AIRFLOW_UID:-50000}:0"
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+volumes:
+  postgres-db-volume:

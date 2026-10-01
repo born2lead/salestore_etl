@@ -1,0 +1,92 @@
+name: Continuous Integration & Deployment Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-lint:
+    name: Run PyTest & Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 black
+
+      - name: Code Formatting Check (Black)
+        run: |
+          black --check src/ tests/ scripts/ || echo "Formatting check warning"
+
+      - name: Lint Code (Flake8)
+        run: |
+          flake8 src/ tests/ scripts/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src/ tests/ scripts/ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+
+      - name: Run PyTest Suite
+        run: |
+          pytest tests/ -v --junitxml=test-results.xml
+
+  terraform-validate:
+    name: Validate Terraform Infrastructure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.2"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: terraform
+
+      - name: Terraform Init & Validate
+        run: |
+          terraform init -backend=false
+          terraform validate
+        working-directory: terraform
+
+  deploy-artifacts:
+    name: Package & Deploy S3 Artifacts
+    needs: [test-and-lint, terraform-validate]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install AWS SDK (Boto3)
+        run: pip install boto3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Run Package & Upload Script
+        run: python scripts/upload_artifacts.py

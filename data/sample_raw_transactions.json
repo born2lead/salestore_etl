@@ -1,0 +1,46 @@
+[
+  {
+    "transaction_id": "TXN_1001",
+    "customer_id": "CUST_501",
+    "store_id": "STORE_NY_01",
+    "product_id": "PROD_991",
+    "quantity": 2,
+    "unit_price": 49.99,
+    "total_amount": 99.98,
+    "transaction_timestamp": "2026-09-25 10:15:30",
+    "payment_method": "credit_card"
+  },
+  {
+    "transaction_id": "TXN_1002",
+    "customer_id": "CUST_502",
+    "store_id": "STORE_NY_01",
+    "product_id": "PROD_442",
+    "quantity": 1,
+    "unit_price": 120.00,
+    "total_amount": 120.00,
+    "transaction_timestamp": "2026-09-25 11:20:00",
+    "payment_method": "debit_card"
+  },
+  {
+    "transaction_id": "TXN_1003",
+    "customer_id": "CUST_501",
+    "store_id": "STORE_CA_02",
+    "product_id": "PROD_105",
+    "quantity": 5,
+    "unit_price": 15.00,
+    "total_amount": 75.00,
+    "transaction_timestamp": "2026-09-25 12:45:10",
+    "payment_method": "upi"
+  },
+  {
+    "transaction_id": "TXN_1001",
+    "customer_id": "CUST_501",
+    "store_id": "STORE_NY_01",
+    "product_id": "PROD_991",
+    "quantity": 2,
+    "unit_price": 49.99,
+    "total_amount": 99.98,
+    "transaction_timestamp": "2026-09-25 10:15:30",
+    "payment_method": "credit_card"
+  }
+]
