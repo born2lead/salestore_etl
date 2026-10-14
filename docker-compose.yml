@@ -46,8 +46,9 @@ services:
       SNS_TOPIC_ARN: ${SNS_TOPIC_ARN:-arn:aws:sns:ap-south-1:939139585522:de-proj-aws-pipeline-alerts-dev}
       GLUE_BRONZE_SILVER_JOB_NAME: ${GLUE_BRONZE_SILVER_JOB_NAME:-de-proj-aws-bronze-to-silver}
       GLUE_SILVER_GOLD_JOB_NAME: ${GLUE_SILVER_GOLD_JOB_NAME:-de-proj-aws-silver-to-gold}
-      GLUE_SILVER_CRAWLER_NAME: ${GLUE_SILVER_CRAWLER_NAME:-de-proj-aws-silver-crawler}
-      GLUE_GOLD_CRAWLER_NAME: ${GLUE_GOLD_CRAWLER_NAME:-de-proj-aws-gold-crawler}
+      GLUE_SILVER_CRAWLER_NAME: ${GLUE_SILVER_CRAWLER_NAME:-de-proj-aws-silver-crawler-dev}
+      GLUE_GOLD_CRAWLER_NAME: ${GLUE_GOLD_CRAWLER_NAME:-de-proj-aws-gold-crawler-dev}
+      EXECUTION_ENGINE: ${EXECUTION_ENGINE:-glue}
     volumes:
       &airflow-common-volumes
       - ./dags:/opt/airflow/dags

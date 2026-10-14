@@ -264,12 +264,20 @@ resource "aws_iam_role_policy_attachment" "glue_s3_attach" {
 resource "aws_glue_catalog_database" "analytics_db" {
   name        = "${replace(var.project_name, "-", "_")}_db_${var.environment}"
   description = "AWS Glue Data Catalog for Silver and Gold Zone Lakehouse tables"
+
+  create_table_default_permission {
+    permissions = ["ALL"]
+    principal {
+      data_lake_principal_identifier = "IAM_ALLOWED_PRINCIPALS"
+    }
+  }
 }
 
 resource "aws_glue_crawler" "silver_crawler" {
   database_name = aws_glue_catalog_database.analytics_db.name
   name          = "${var.project_name}-silver-crawler-${var.environment}"
   role          = aws_iam_role.glue_service_role.arn
+  table_prefix  = "silver_"
 
   s3_target {
     path = "s3://${aws_s3_bucket.silver_zone.bucket}/silver/transactions/"
@@ -279,12 +287,20 @@ resource "aws_glue_crawler" "silver_crawler" {
     delete_behavior = "LOG"
     update_behavior = "UPDATE_IN_DATABASE"
   }
+
+  configuration = jsonencode({
+    Version = 1.0
+    CrawlerOutput = {
+      Partitions = { AddOrUpdateBehavior = "InheritFromTable" }
+    }
+  })
 }
 
 resource "aws_glue_crawler" "gold_crawler" {
   database_name = aws_glue_catalog_database.analytics_db.name
   name          = "${var.project_name}-gold-crawler-${var.environment}"
   role          = aws_iam_role.glue_service_role.arn
+  table_prefix  = "gold_"
 
   s3_target {
     path = "s3://${aws_s3_bucket.gold_zone.bucket}/gold/"
@@ -294,6 +310,13 @@ resource "aws_glue_crawler" "gold_crawler" {
     delete_behavior = "LOG"
     update_behavior = "UPDATE_IN_DATABASE"
   }
+
+  configuration = jsonencode({
+    Version = 1.0
+    CrawlerOutput = {
+      Partitions = { AddOrUpdateBehavior = "InheritFromTable" }
+    }
+  })
 }
 
 # -----------------------------------------------------------------------------

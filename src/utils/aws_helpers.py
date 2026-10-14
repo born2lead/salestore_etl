@@ -3,6 +3,7 @@ AWS Boto3 Helper Utilities.
 Encapsulates S3 operations, AWS Glue Crawler execution, and SNS notification alerts.
 """
 
+import os
 import boto3
 import logging
 import json
@@ -10,18 +11,20 @@ from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
-def get_boto3_client(service_name: str, region_name: str = "us-east-1"):
+def get_boto3_client(service_name: str, region_name: str = None):
     """
     Returns an authenticated Boto3 client for a given AWS service.
     """
-    return boto3.client(service_name, region_name=region_name)
+    effective_region = region_name or os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "ap-south-1"))
+    return boto3.client(service_name, region_name=effective_region)
 
 
-def trigger_glue_crawler(crawler_name: str, region_name: str = "us-east-1") -> str:
+def trigger_glue_crawler(crawler_name: str, region_name: str = None) -> str:
     """
     Triggers an AWS Glue Crawler to scan updated S3 partitions and update Athena catalog metadata.
     """
-    glue_client = get_boto3_client("glue", region_name)
+    effective_region = region_name or os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "ap-south-1"))
+    glue_client = get_boto3_client("glue", effective_region)
     try:
         response = glue_client.start_crawler(Name=crawler_name)
         logger.info(f"Triggered Glue Crawler '{crawler_name}' successfully.")
@@ -38,7 +41,7 @@ def send_sns_notification(
     topic_arn: str,
     subject: str,
     message_dict: Dict[str, Any],
-    region_name: str = "us-east-1"
+    region_name: str = None
 ) -> str:
     """
     Sends structured JSON notification to AWS SNS topic (alerts on pipeline status).
@@ -47,7 +50,8 @@ def send_sns_notification(
         logger.warning("SNS Topic ARN not provided. Skipping notification.")
         return ""
         
-    sns_client = get_boto3_client("sns", region_name)
+    effective_region = region_name or os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "ap-south-1"))
+    sns_client = get_boto3_client("sns", effective_region)
     formatted_msg = json.dumps(message_dict, indent=2)
     
     try:
