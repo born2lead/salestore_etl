@@ -12,3 +12,10 @@ This project is an AWS Data Engineering Lakehouse pipeline configured in `ap-sou
 - **Run Unit Tests**: Run `venv\Scripts\pytest tests/ -v`.
 - **Local Airflow (Docker)**: Run `powershell scripts/start_airflow.ps1` to launch Airflow; Web UI at `http://localhost:8080` (admin/admin). Stop with `powershell scripts/stop_airflow.ps1`.
 - **CI/CD Workflow**: Located at `.github/workflows/ci.yml`.
+- **Latest Handover Summary**: See `docs/session_summary_2026-10-14.md` for full log.
+- **Glue Infrastructure Status**:
+  - Silver & Gold Glue Crawlers (`de-proj-aws-silver-crawler-dev`, `de-proj-aws-gold-crawler-dev`) and PySpark Jobs (`de-proj-aws-bronze-to-silver`, `de-proj-aws-silver-to-gold`) deployed via Terraform.
+  - Lake Formation permissions configured with `IAM_ALLOWED_PRINCIPALS` default permissions.
+  - End-to-end Airflow DAG (`aws_de_lakehouse_etl_pipeline`) fully verified with `EXECUTION_ENGINE="glue"`.
+- **Current Git Status**:
+  - Latest commit: `c873719` on branch `main`. Push pending user credential approval (`git push origin main`).
