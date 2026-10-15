@@ -53,3 +53,4 @@ logs/
 *.zip
 response.json
 .pytest_cache/
+LINKEDIN_POST.txt
