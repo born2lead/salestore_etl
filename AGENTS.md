@@ -18,4 +18,5 @@ This project is an AWS Data Engineering Lakehouse pipeline configured in `ap-sou
   - Lake Formation permissions configured with `IAM_ALLOWED_PRINCIPALS` default permissions.
   - End-to-end Airflow DAG (`aws_de_lakehouse_etl_pipeline`) fully verified with `EXECUTION_ENGINE="glue"`.
 - **Current Git Status**:
-  - Latest commit: `c873719` on branch `main`. Push pending user credential approval (`git push origin main`).
+  - Active branch: `aws-de-pipeline` (tracking `origin/aws-de-pipeline`).
+  - Latest commit: `8956252` pushed to GitHub.
